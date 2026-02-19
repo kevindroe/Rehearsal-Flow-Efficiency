@@ -1,0 +1,1347 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Rehearsal Flow Efficiency Tracker</title>
+  <style>
+    :root{
+      --bg:#ffffff;
+      --text:#111827;
+      --muted:#4b5563;
+      --border:#e5e7eb;
+      --soft:#f3f4f6;
+      --shadow: 0 10px 25px rgba(0,0,0,.08);
+      --radius:14px;
+      --primaryBg:#dbeafe;
+      --primaryBorder:#bfdbfe;
+      --dangerBg:#fee2e2;
+      --dangerBorder:#fecaca;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:var(--bg);color:var(--text)}
+    .wrap{max-width:1200px;margin:0 auto;padding:18px}
+    header{
+      display:flex;gap:14px;align-items:center;
+      padding:14px;border:1px solid var(--border);border-radius:var(--radius);
+      background:#fff;box-shadow:var(--shadow);
+    }
+    .logo{
+      width:92px;height:64px;flex:0 0 auto;border-radius:12px;
+      background:var(--soft);border:1px solid var(--border);
+      display:flex;align-items:center;justify-content:center;overflow:hidden;
+    }
+    .logo img{width:100%;height:100%;object-fit:contain}
+    h1{margin:0;font-size:20px}
+    .sub{margin-top:4px;color:var(--muted);font-size:13px}
+
+    .grid{margin-top:14px;display:grid;grid-template-columns: 1.15fr .85fr;gap:14px}
+    @media (max-width: 980px){.grid{grid-template-columns:1fr}}
+
+    .panel{
+      border:1px solid var(--border);border-radius:var(--radius);
+      background:#fff;box-shadow:var(--shadow);padding:14px;
+    }
+    .panel h2{margin:0 0 10px;font-size:14px}
+    .divider{height:1px;background:var(--border);margin:12px 0}
+
+    label{display:block;font-size:12px;color:var(--muted);margin:0 0 6px}
+    input[type="text"], input[type="date"], select, textarea{
+      width:100%;border-radius:12px;border:1px solid var(--border);
+      padding:10px 12px;background:#fff;color:var(--text);outline:none;
+    }
+    textarea{min-height:96px;resize:vertical}
+
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+    .grow{flex:1 1 auto;min-width:220px}
+
+    .btn{
+      appearance:none;border:1px solid var(--border);background:var(--soft);
+      color:var(--text);padding:10px 12px;border-radius:12px;cursor:pointer;
+      font-weight:800;user-select:none;transition:.15s ease;
+    }
+    .btn:hover{background:#eef2ff;border-color:#c7d2fe}
+    .btn.primary{background:var(--primaryBg);border-color:var(--primaryBorder);color:#1e40af}
+    .btn.danger{background:var(--dangerBg);border-color:var(--dangerBorder);color:#7f1d1d}
+    .btn.small{padding:8px 10px;border-radius:10px;font-size:13px}
+
+    .metaGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    @media (max-width:560px){.metaGrid{grid-template-columns:1fr}}
+
+    .hint{color:var(--muted);font-size:12px;line-height:1.35;margin-top:6px}
+
+    .pill{
+      display:inline-flex;gap:8px;align-items:center;
+      padding:7px 10px;border-radius:999px;border:1px solid var(--border);
+      background:#fff;color:var(--muted);font-size:12px
+    }
+    .pill b{color:var(--text)}
+    .mono{font-variant-numeric:tabular-nums;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
+
+    .cards{display:grid;grid-template-columns:1fr;gap:10px}
+    .card{
+      border:1px solid var(--border);border-radius:14px;padding:12px;background:#fff;
+    }
+    .cardTop{display:flex;gap:10px;justify-content:space-between;align-items:flex-start}
+    .cardTitle{font-weight:950;font-size:14px}
+    .cardDesc{margin-top:4px;color:var(--muted);font-size:12px;line-height:1.35}
+    .cardMeta{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;align-items:center}
+    .tag{
+      font-size:11px;padding:6px 9px;border-radius:999px;border:1px solid var(--border);
+      background:#fff;color:var(--muted);white-space:nowrap;
+    }
+    .active{
+      outline:2px solid #93c5fd;
+      box-shadow: 0 0 0 4px rgba(147,197,253,.35);
+    }
+
+    /* Video section */
+    .videoBox{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:#fff}
+    .videoHeader{padding:12px;background:var(--soft);border-bottom:1px solid var(--border)}
+    .tabs{display:flex;gap:8px;flex-wrap:wrap}
+    .tab{
+      border:1px solid var(--border);background:#fff;border-radius:999px;
+      padding:8px 10px;cursor:pointer;font-weight:900;font-size:12px;color:var(--muted)
+    }
+    .tab.active{background:var(--primaryBg);border-color:var(--primaryBorder);color:#1e40af}
+    .videoBody{padding:12px;display:grid;grid-template-columns:1fr;gap:10px}
+    .playerWrap{
+      border:1px solid var(--border);border-radius:14px;overflow:hidden;background:#000;
+      aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;
+    }
+    .playerWrap iframe, .playerWrap video{width:100%;height:100%;display:block}
+    .playerWrap .placeholder{
+      color:#e5e7eb;font-size:13px;padding:10px;text-align:center
+    }
+
+    .log{
+      margin-top:10px;border:1px solid var(--border);border-radius:14px;overflow:hidden;background:#fff
+    }
+    .logHead{
+      display:flex;justify-content:space-between;align-items:center;gap:10px;
+      padding:10px 12px;background:var(--soft);border-bottom:1px solid var(--border)
+    }
+    .logHead .title{font-weight:950;font-size:13px}
+    .logList{max-height:260px;overflow:auto}
+    .logItem{
+      padding:10px 12px;border-bottom:1px solid var(--border);
+      display:grid;grid-template-columns:1fr auto;gap:10px;
+    }
+    .logItem:last-child{border-bottom:none}
+    .logItem .a{font-weight:950;font-size:12px}
+    .logItem .b{color:var(--muted);font-size:12px;margin-top:2px;line-height:1.25}
+    .rightTiny{color:var(--muted);font-size:12px;white-space:nowrap}
+
+    .statGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    @media (max-width:560px){.statGrid{grid-template-columns:1fr}}
+    .stat{border:1px solid var(--border);border-radius:14px;padding:10px;background:#fff}
+    .stat .k{color:var(--muted);font-size:12px;margin-bottom:4px}
+    .stat .v{font-size:18px;font-weight:950}
+
+    .barWrap{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+    .barRow{display:grid;grid-template-columns:180px 1fr 130px;gap:10px;align-items:center}
+    @media (max-width:560px){.barRow{grid-template-columns:1fr}}
+    .barLabel{font-weight:900;font-size:12px}
+    .bar{height:12px;border-radius:999px;background:var(--soft);border:1px solid var(--border);overflow:hidden}
+    .bar > div{height:100%;width:0%}
+    .barVal{color:var(--muted);font-size:12px;text-align:right}
+
+    .toast{
+      position:fixed;left:50%;bottom:18px;transform:translateX(-50%);
+      background:#111827;color:#fff;border:1px solid rgba(255,255,255,.15);
+      padding:10px 12px;border-radius:12px;box-shadow:var(--shadow);
+      display:none;max-width:92vw;font-size:13px;z-index:9999;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">
+        <img src="Next-Gen-Music-Ed-logo.png" alt="Next-Gen Music Ed Logo" />
+      </div>
+      <div>
+        <h1>Rehearsal Flow Efficiency Tracker</h1>
+        <div class="sub">Developed by Kevin Droe, Ph.D.</div>
+      </div>
+    </header>
+
+    <div class="grid">
+      <!-- LEFT -->
+      <section class="panel">
+        <h2>Observation Details</h2>
+        <div class="metaGrid">
+          <div>
+            <label for="observerName">Observer name</label>
+            <input id="observerName" type="text" placeholder="e.g., Kevin Droe" />
+          </div>
+          <div>
+            <label for="obsDate">Date</label>
+            <input id="obsDate" type="date" />
+          </div>
+          <div>
+            <label for="teacherName">Teacher name</label>
+            <input id="teacherName" type="text" placeholder="e.g., Ms. Smith" />
+          </div>
+          <div>
+            <label for="contextClass">Context / class</label>
+            <input id="contextClass" type="text" placeholder="e.g., 7th Grade Band – warmup + rep rehearsal" />
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <h2>Observation Mode</h2>
+        <div class="row">
+          <div class="grow">
+            <label for="obsMode">Mode</label>
+            <select id="obsMode">
+              <option value="live">Live Observation</option>
+              <option value="video">Video Observation</option>
+            </select>
+          </div>
+          <div class="grow">
+            <label for="syncToggle">Sync observation to playback</label>
+            <select id="syncToggle">
+              <option value="off">Off</option>
+              <option value="on">On</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="videoArea" style="display:none;margin-top:12px;">
+          <div class="videoBox">
+            <div class="videoHeader">
+              <div class="tabs">
+                <button class="tab active" id="tabUpload" type="button">Upload video</button>
+                <button class="tab" id="tabYouTube" type="button">YouTube URL</button>
+              </div>
+              <div class="hint" id="videoHint">
+                Upload works locally and on GitHub Pages. If YouTube embedding fails for a specific video, use Upload.
+              </div>
+            </div>
+
+            <div class="videoBody">
+              <!-- Upload controls -->
+              <div id="uploadControls">
+                <div class="row">
+                  <div class="grow">
+                    <label for="videoFile">Choose a video file</label>
+                    <input id="videoFile" type="file" accept="video/*" />
+                    <div class="hint" id="uploadStatus">No file selected.</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- YouTube controls -->
+              <div id="youTubeControls" style="display:none;">
+                <label for="ytUrl">Paste YouTube URL</label>
+                <div class="row">
+                  <div class="grow">
+                    <input id="ytUrl" type="text" placeholder="https://www.youtube.com/watch?v=..." />
+                  </div>
+                  <button class="btn primary" id="loadYtBtn" type="button">Load</button>
+                </div>
+                <div class="hint" id="ytFailHint" style="display:none;">
+                  This video may block embedding. Use Upload instead.
+                </div>
+              </div>
+
+              <!-- Player -->
+              <div class="playerWrap" id="playerWrap">
+                <div class="placeholder" id="playerPlaceholder">No video loaded yet.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <h2>Category Timers</h2>
+        <div class="row" style="align-items:center;margin-bottom:10px;">
+          <span class="pill">Status: <b id="statusText">Idle</b></span>
+          <span class="pill">Active: <b id="activeCatText">None</b></span>
+          <span class="pill">Elapsed: <b class="mono" id="elapsedText">00:00:00</b></span>
+          <button class="btn small danger" id="stopBtn" type="button">Stop</button>
+          <button class="btn small" id="undoBtn" type="button">Undo last</button>
+        </div>
+
+        <div class="row" style="margin-bottom:10px;">
+          <div class="grow">
+            <label for="noteInput">Note (optional — saved with the next segment)</label>
+            <input id="noteInput" type="text" placeholder="e.g., Clarified entrances; fixed wrong notes in m. 34" />
+          </div>
+          <button class="btn small" id="clearNoteBtn" type="button">Clear note</button>
+        </div>
+
+        <div class="cards" id="cards"></div>
+
+        <div class="log">
+          <div class="logHead">
+            <div class="title">Observation Log</div>
+            <div class="row">
+              <button class="btn small" id="resetBtn" type="button">Reset session</button>
+              <button class="btn small primary" id="exportJsonBtn" type="button">Export .json</button>
+            </div>
+          </div>
+          <div class="logList" id="logList"></div>
+        </div>
+      </section>
+
+      <!-- RIGHT -->
+      <aside class="panel">
+        <h2>Analysis</h2>
+
+        <div class="statGrid">
+          <div class="stat">
+            <div class="k">Total observed time</div>
+            <div class="v mono" id="totalTime">00:00:00</div>
+          </div>
+          <div class="stat">
+            <div class="k">Segments recorded</div>
+            <div class="v mono" id="segCount">0</div>
+          </div>
+        </div>
+
+        <div style="height:10px"></div>
+
+        <div class="statGrid">
+          <div class="stat">
+            <div class="k">Productive Time</div>
+            <div class="v mono" id="bucketProductive">00:00:00</div>
+            <div class="hint" id="bucketProductivePct">0.0%</div>
+          </div>
+          <div class="stat">
+            <div class="k">Instructional Support Time</div>
+            <div class="v mono" id="bucketSupport">00:00:00</div>
+            <div class="hint" id="bucketSupportPct">0.0%</div>
+          </div>
+          <div class="stat">
+            <div class="k">Lost Time</div>
+            <div class="v mono" id="bucketLost">00:00:00</div>
+            <div class="hint" id="bucketLostPct">0.0%</div>
+          </div>
+          <div class="stat">
+            <div class="k">Centeredness (Productive %)</div>
+            <div class="v mono" id="centeredness">0.0%</div>
+            <div class="hint">Productive ÷ total</div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="hint" style="margin-bottom:6px;">
+          Category breakdown (time + percentage of total)
+        </div>
+        <div class="barWrap" id="bars"></div>
+
+        <div class="divider"></div>
+
+        <h2>Export (Text / CSV)</h2>
+        <div class="row">
+          <button class="btn small" id="generateTextBtn" type="button">Generate export text</button>
+          <button class="btn small primary" id="copyTextBtn" type="button">Copy to clipboard</button>
+          <button class="btn small" id="exportCsvBtn" type="button">Export .csv</button>
+        </div>
+        <div style="height:10px"></div>
+        <label for="exportText">Export text (copy/paste)</label>
+        <textarea id="exportText" placeholder="Click “Generate export text” to create a summary you can copy."></textarea>
+
+        <div class="divider"></div>
+
+        <div class="hint">
+          <b>Bucket mapping:</b><br/>
+          Productive Time → Active music making<br/>
+          Instructional Support Time → Instruction (talking), Teacher modeling, Student discussion/reflection<br/>
+          Lost Time → Transition/setup, Behavior management, Waiting/downtime
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    /***********************
+     * Categories
+     ***********************/
+    const CATEGORIES = [
+      { id:"active_music", name:"Active music making",
+        desc:"Students are making music (playing/singing/creating).",
+        bucket:"Productive Time", color:"#e0f2fe" },
+      { id:"instruction_talk", name:"Instruction (talking)",
+        desc:"Teacher verbal instruction, explanation, directions, feedback spoken.",
+        bucket:"Instructional Support Time", color:"#ede9fe" },
+      { id:"teacher_modeling", name:"Teacher modeling",
+        desc:"Teacher demonstrates musically (plays/sings to model).",
+        bucket:"Instructional Support Time", color:"#ffedd5" },
+      { id:"student_discussion", name:"Student discussion/reflection",
+        desc:"Students discuss, reflect, give peer feedback, describe what they hear/notice.",
+        bucket:"Instructional Support Time", color:"#dcfce7" },
+      { id:"transition_setup", name:"Transition/setup",
+        desc:"Moving seats/stands, distributing materials, instrument setup, changing activities.",
+        bucket:"Lost Time", color:"#fef9c3" },
+      { id:"behavior_mgmt", name:"Behavior management",
+        desc:"Addressing behavior, off-task correction, discipline/redirects.",
+        bucket:"Lost Time", color:"#fee2e2" },
+      { id:"waiting_downtime", name:"Waiting / downtime",
+        desc:"Students waiting (idle), long pauses, no active instruction or music happening.",
+        bucket:"Lost Time", color:"#e5e7eb" }
+    ];
+    const BUCKETS = ["Productive Time","Instructional Support Time","Lost Time"];
+
+    const state = {
+      sessionId: cryptoRandomId(),
+      startedAtISO: new Date().toISOString(),
+      mode: "live",
+      sync: "off",
+      activeCatId: null,
+      segmentStartMs: null,
+      segments: [],
+      videoType: "upload",
+      uploadObjectUrl: null,
+      uploadFileName: null,
+      ytPlayer: null,
+      ytPoll: null,
+      ytVideoId: null
+    };
+
+    /***********************
+     * DOM
+     ***********************/
+    const el = (id) => document.getElementById(id);
+
+    const observerName = el("observerName");
+    const obsDate = el("obsDate");
+    const teacherName = el("teacherName");
+    const contextClass = el("contextClass");
+
+    const obsMode = el("obsMode");
+    const syncToggle = el("syncToggle");
+    const videoArea = el("videoArea");
+
+    const tabUpload = el("tabUpload");
+    const tabYouTube = el("tabYouTube");
+    const uploadControls = el("uploadControls");
+    const youTubeControls = el("youTubeControls");
+
+    const videoFile = el("videoFile");
+    const uploadStatus = el("uploadStatus");
+
+    const ytUrl = el("ytUrl");
+    const loadYtBtn = el("loadYtBtn");
+    const ytFailHint = el("ytFailHint");
+
+    const playerWrap = el("playerWrap");
+
+    const statusText = el("statusText");
+    const activeCatText = el("activeCatText");
+    const elapsedText = el("elapsedText");
+    const stopBtn = el("stopBtn");
+    const undoBtn = el("undoBtn");
+    const resetBtn = el("resetBtn");
+    const exportJsonBtn = el("exportJsonBtn");
+
+    const noteInput = el("noteInput");
+    const clearNoteBtn = el("clearNoteBtn");
+
+    const cards = el("cards");
+    const logList = el("logList");
+
+    const totalTime = el("totalTime");
+    const segCount = el("segCount");
+    const bucketProductive = el("bucketProductive");
+    const bucketSupport = el("bucketSupport");
+    const bucketLost = el("bucketLost");
+    const bucketProductivePct = el("bucketProductivePct");
+    const bucketSupportPct = el("bucketSupportPct");
+    const bucketLostPct = el("bucketLostPct");
+    const centeredness = el("centeredness");
+    const bars = el("bars");
+
+    const generateTextBtn = el("generateTextBtn");
+    const copyTextBtn = el("copyTextBtn");
+    const exportCsvBtn = el("exportCsvBtn");
+    const exportText = el("exportText");
+
+    const toast = el("toast");
+
+    // Default date
+    try{
+      const d = new Date();
+      const iso = new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+      obsDate.value = iso;
+    }catch(e){}
+
+    /***********************
+     * Build cards
+     ***********************/
+    function buildCards(){
+      cards.innerHTML = "";
+      for(const cat of CATEGORIES){
+        const card = document.createElement("div");
+        card.className = "card";
+        card.id = `card_${cat.id}`;
+        card.style.background = cat.color;
+
+        const top = document.createElement("div");
+        top.className = "cardTop";
+
+        const left = document.createElement("div");
+        const title = document.createElement("div");
+        title.className = "cardTitle";
+        title.textContent = cat.name;
+        const desc = document.createElement("div");
+        desc.className = "cardDesc";
+        desc.textContent = cat.desc;
+        left.appendChild(title);
+        left.appendChild(desc);
+
+        const meta = document.createElement("div");
+        meta.className = "cardMeta";
+
+        const tagBucket = document.createElement("div");
+        tagBucket.className = "tag";
+        tagBucket.textContent = cat.bucket;
+
+        const tagTime = document.createElement("div");
+        tagTime.className = "tag mono";
+        tagTime.id = `time_${cat.id}`;
+        tagTime.textContent = "00:00:00";
+
+        const btn = document.createElement("button");
+        btn.className = "btn small primary";
+        btn.type = "button";
+        btn.id = `btn_${cat.id}`;
+        btn.textContent = "Start";
+        btn.addEventListener("click", () => toggleCategory(cat.id));
+
+        meta.appendChild(tagBucket);
+        meta.appendChild(tagTime);
+        meta.appendChild(btn);
+
+        top.appendChild(left);
+        top.appendChild(meta);
+        card.appendChild(top);
+        cards.appendChild(card);
+      }
+    }
+    buildCards();
+
+    /***********************
+     * Build bars once (for live updates)
+     ***********************/
+    function buildBarsOnce(){
+      bars.innerHTML = "";
+      for(const c of CATEGORIES){
+        const row = document.createElement("div");
+        row.className = "barRow";
+
+        const label = document.createElement("div");
+        label.className = "barLabel";
+        label.textContent = c.name;
+
+        const bar = document.createElement("div");
+        bar.className = "bar";
+
+        const fill = document.createElement("div");
+        fill.id = `barFill_${c.id}`;
+        fill.style.width = `0%`;
+        fill.style.background = "#60a5fa";
+        fill.style.boxShadow = `inset 0 0 0 999px ${c.color}`;
+        bar.appendChild(fill);
+
+        const val = document.createElement("div");
+        val.className = "barVal mono";
+        val.id = `barVal_${c.id}`;
+        val.textContent = `00:00:00 · 0.0%`;
+
+        row.appendChild(label);
+        row.appendChild(bar);
+        row.appendChild(val);
+        bars.appendChild(row);
+      }
+    }
+    buildBarsOnce();
+
+    /***********************
+     * Mode + Sync
+     ***********************/
+    obsMode.addEventListener("change", () => {
+      state.mode = obsMode.value;
+      videoArea.style.display = (state.mode === "video") ? "" : "none";
+    });
+
+    syncToggle.addEventListener("change", () => {
+      state.sync = syncToggle.value;
+      showToast(`Sync is ${state.sync.toUpperCase()}.`);
+    });
+
+    /***********************
+     * Tabs (Video Source)
+     ***********************/
+    function setTab(which){
+      const upload = (which === "upload");
+      state.videoType = upload ? "upload" : "youtube";
+
+      tabUpload.classList.toggle("active", upload);
+      tabYouTube.classList.toggle("active", !upload);
+
+      uploadControls.style.display = upload ? "" : "none";
+      youTubeControls.style.display = upload ? "none" : "";
+
+      ytFailHint.style.display = "none";
+      if(!upload){
+        clearPlayerWrap();
+        showPlaceholder("Paste a YouTube URL and click Load.");
+      }else{
+        if(!state.uploadObjectUrl){
+          clearPlayerWrap();
+          showPlaceholder("Choose a video file above.");
+        }else{
+          renderUploadPlayer();
+        }
+      }
+    }
+    tabUpload.addEventListener("click", () => setTab("upload"));
+    tabYouTube.addEventListener("click", () => setTab("youtube"));
+    setTab("upload");
+
+    /***********************
+     * Player helpers
+     ***********************/
+    function clearPlayerWrap(){
+      if(state.ytPoll){ clearInterval(state.ytPoll); state.ytPoll = null; }
+      playerWrap.innerHTML = "";
+    }
+    function showPlaceholder(msg){
+      const ph = document.createElement("div");
+      ph.className = "placeholder";
+      ph.textContent = msg;
+      playerWrap.appendChild(ph);
+    }
+
+    function renderUploadPlayer(){
+      clearPlayerWrap();
+      const v = document.createElement("video");
+      v.controls = true;
+      v.playsInline = true;
+      v.preload = "metadata";
+      v.src = state.uploadObjectUrl;
+      v.dataset.filename = state.uploadFileName || "";
+      v.style.background = "#000";
+      playerWrap.appendChild(v);
+
+      v.addEventListener("play", () => onPlaybackChange(true));
+      v.addEventListener("pause", () => onPlaybackChange(false));
+      v.addEventListener("ended", () => onPlaybackChange(false));
+
+      v.addEventListener("loadedmetadata", () => {
+        uploadStatus.textContent = `Loaded: ${state.uploadFileName || "video"} (${Math.round((v.duration||0))} sec)`;
+      });
+      v.addEventListener("error", () => {
+        uploadStatus.textContent = "Video error: this file may use a codec Chrome can’t decode. Try exporting as H.264/AAC in .mp4.";
+        showToast("Video error. Possible codec issue.");
+      });
+
+      showToast("Video loaded. Press Play.");
+    }
+
+    /***********************
+     * Upload
+     ***********************/
+    videoFile.addEventListener("change", () => {
+      const file = videoFile.files && videoFile.files[0];
+      if(!file) return;
+
+      if(state.uploadObjectUrl){
+        URL.revokeObjectURL(state.uploadObjectUrl);
+        state.uploadObjectUrl = null;
+      }
+      state.uploadObjectUrl = URL.createObjectURL(file);
+      state.uploadFileName = file.name || "uploaded-video";
+      uploadStatus.textContent = `Selected: ${state.uploadFileName} (${formatBytes(file.size)})`;
+
+      setTab("upload");
+      renderUploadPlayer();
+    });
+
+    /***********************
+     * YouTube
+     ***********************/
+    loadYtBtn.addEventListener("click", () => {
+      const url = ytUrl.value.trim();
+      const vid = parseYouTubeId(url);
+      if(!vid){
+        showToast("Please paste a valid YouTube URL.");
+        return;
+      }
+      setTab("youtube");
+      loadYouTubeVideo(vid);
+    });
+
+    function loadYouTubeVideo(videoId){
+      state.ytVideoId = videoId;
+      clearPlayerWrap();
+
+      const host = document.createElement("div");
+      host.id = "ytHost";
+      host.style.width = "100%";
+      host.style.height = "100%";
+      playerWrap.appendChild(host);
+
+      if(!window.YT || !window.YT.Player){
+        injectYouTubeAPI(() => createOrLoadYT(videoId));
+      }else{
+        createOrLoadYT(videoId);
+      }
+    }
+
+    function createOrLoadYT(videoId){
+      try{
+        state.ytPlayer = new YT.Player('ytHost', {
+          width: '100%',
+          height: '100%',
+          videoId,
+          playerVars: { playsinline: 1, rel: 0, modestbranding: 1 },
+          events: {
+            onReady: () => { showToast("YouTube player ready."); startYtStatePolling(); },
+            onError: () => { ytFailHint.style.display = ""; showToast("YouTube embed error. Use Upload instead."); }
+          }
+        });
+      }catch(e){
+        ytFailHint.style.display = "";
+        showToast("YouTube failed to load. Use Upload instead.");
+      }
+    }
+
+    function injectYouTubeAPI(cb){
+      if(document.getElementById("ytApiScript")){ cb?.(); return; }
+      const s = document.createElement("script");
+      s.id = "ytApiScript";
+      s.src = "https://www.youtube.com/iframe_api";
+      document.head.appendChild(s);
+      window.onYouTubeIframeAPIReady = () => cb?.();
+    }
+
+    function startYtStatePolling(){
+      if(state.ytPoll) clearInterval(state.ytPoll);
+      let lastIsPlaying = false;
+      state.ytPoll = setInterval(() => {
+        if(!state.ytPlayer || state.mode !== "video" || state.videoType !== "youtube") return;
+        let st = null;
+        try{ st = state.ytPlayer.getPlayerState(); }catch(e){ st = null; }
+        const isPlaying = (st === 1);
+        if(isPlaying !== lastIsPlaying){
+          lastIsPlaying = isPlaying;
+          onPlaybackChange(isPlaying);
+        }
+      }, 250);
+    }
+
+    function getCurrentUploadVideoEl(){
+      return playerWrap.querySelector("video");
+    }
+
+    function getVideoContextSnapshot(){
+      if(state.mode !== "video") return null;
+
+      if(state.videoType === "upload"){
+        const v = getCurrentUploadVideoEl();
+        return {
+          type: "upload",
+          filename: state.uploadFileName || null,
+          currentTimeSec: v ? safeNumber(v.currentTime) : null,
+          durationSec: v ? safeNumber(v.duration) : null
+        };
+      }
+      if(state.videoType === "youtube" && state.ytPlayer){
+        let ct=null, dur=null;
+        try{ ct = state.ytPlayer.getCurrentTime(); dur = state.ytPlayer.getDuration(); }catch(e){}
+        return {
+          type: "youtube",
+          videoId: state.ytVideoId,
+          url: ytUrl.value.trim() || null,
+          currentTimeSec: safeNumber(ct),
+          durationSec: safeNumber(dur)
+        };
+      }
+      return { type: state.videoType };
+    }
+
+    /***********************
+     * Sync timing with playback
+     ***********************/
+    function onPlaybackChange(isPlaying){
+      if(state.sync !== "on") return;
+
+      if(isPlaying){
+        if(!state.segmentStartMs){
+          const preferred = state.activeCatId || lastSelectedOrDefault();
+          startSegment(preferred, "playback_start");
+        }
+      }else{
+        if(state.segmentStartMs){
+          stopSegment("playback_pause");
+        }
+      }
+    }
+
+    function lastSelectedOrDefault(){
+      const last = state.segments.length ? state.segments[state.segments.length-1].categoryId : null;
+      return last || "active_music";
+    }
+
+    /***********************
+     * Timing
+     ***********************/
+    function toggleCategory(catId){
+      if(!state.segmentStartMs){
+        startSegment(catId, "manual_start");
+        return;
+      }
+      if(state.activeCatId === catId){
+        stopSegment("manual_stop");
+        return;
+      }
+      stopSegment("switch");
+      startSegment(catId, "switch_start");
+    }
+
+    function startSegment(catId, reason){
+      state.activeCatId = catId;
+      state.segmentStartMs = Date.now();
+      state._pendingNote = (noteInput.value || "").trim();
+      noteInput.value = "";
+
+      setActiveCardUI(catId);
+      statusText.textContent = "Running";
+      activeCatText.textContent = (CATEGORIES.find(c=>c.id===catId)?.name) || catId;
+
+      requestAnimationFrame(tick);
+      showToast(`Started: ${activeCatText.textContent}`);
+    }
+
+    function stopSegment(reason){
+      if(!state.segmentStartMs || !state.activeCatId) return;
+
+      const endMs = Date.now();
+      const durMs = Math.max(0, endMs - state.segmentStartMs);
+
+      const cat = CATEGORIES.find(c=>c.id===state.activeCatId);
+      state.segments.push({
+        id: cryptoRandomId(),
+        categoryId: state.activeCatId,
+        categoryName: cat?.name || state.activeCatId,
+        bucket: cat?.bucket || "Unknown",
+        startISO: new Date(state.segmentStartMs).toISOString(),
+        endISO: new Date(endMs).toISOString(),
+        durationMs: durMs,
+        note: state._pendingNote || "",
+        mode: state.mode,
+        video: getVideoContextSnapshot(),
+        stopReason: reason
+      });
+
+      state.segmentStartMs = null;
+      state.activeCatId = null;
+      state._pendingNote = "";
+
+      clearActiveCardUI();
+      statusText.textContent = "Idle";
+      activeCatText.textContent = "None";
+      elapsedText.textContent = "00:00:00";
+
+      renderAll(); // full render after a segment ends
+      showToast("Stopped.");
+    }
+
+    // LIVE tick: updates elapsed + LIVE card timer + LIVE analysis
+    function tick(){
+      if(!state.segmentStartMs) return;
+
+      const runningMs = Date.now() - state.segmentStartMs;
+      elapsedText.textContent = fmtHMS(runningMs);
+
+      // Live update card timer(s) + sidebar using totals that include the running segment
+      renderLive();
+
+      requestAnimationFrame(tick);
+    }
+
+    stopBtn.addEventListener("click", () => stopSegment("manual_stop"));
+    undoBtn.addEventListener("click", () => {
+      if(state.segmentStartMs){
+        showToast("Stop the current segment before undo.");
+        return;
+      }
+      const removed = state.segments.pop();
+      if(removed){ renderAll(); showToast(`Undid: ${removed.categoryName}`); }
+      else showToast("Nothing to undo.");
+    });
+    resetBtn.addEventListener("click", () => {
+      const ok = confirm("Reset this session? This clears all segments.");
+      if(!ok) return;
+      if(state.segmentStartMs) stopSegment("reset");
+      state.segments = [];
+      state.sessionId = cryptoRandomId();
+      state.startedAtISO = new Date().toISOString();
+      renderAll();
+      exportText.value = "";
+      showToast("Session reset.");
+    });
+    clearNoteBtn.addEventListener("click", () => { noteInput.value = ""; });
+
+    /***********************
+     * Totals (optionally include running segment)
+     ***********************/
+    function computeTotals(includeRunning){
+      const totalsByCat = Object.fromEntries(CATEGORIES.map(c => [c.id, 0]));
+      for(const seg of state.segments){
+        totalsByCat[seg.categoryId] = (totalsByCat[seg.categoryId] || 0) + seg.durationMs;
+      }
+
+      if(includeRunning && state.segmentStartMs && state.activeCatId){
+        const runningMs = Math.max(0, Date.now() - state.segmentStartMs);
+        totalsByCat[state.activeCatId] = (totalsByCat[state.activeCatId] || 0) + runningMs;
+      }
+
+      const totalMs = Object.values(totalsByCat).reduce((a,b)=>a+b,0);
+
+      const bucketTotals = {"Productive Time":0,"Instructional Support Time":0,"Lost Time":0};
+      for(const c of CATEGORIES){
+        bucketTotals[c.bucket] += totalsByCat[c.id] || 0;
+      }
+
+      const pct = (x) => totalMs > 0 ? (x/totalMs)*100 : 0;
+
+      const byCatPct = Object.fromEntries(Object.entries(totalsByCat).map(([k,v]) => [k, pct(v)]));
+      const byBucketPct = Object.fromEntries(Object.entries(bucketTotals).map(([k,v]) => [k, pct(v)]));
+
+      return { totalsByCat, totalMs, bucketTotals, byCatPct, byBucketPct };
+    }
+
+    /***********************
+     * Rendering
+     ***********************/
+    function renderLive(){
+      // Only do lightweight DOM updates — no log rebuild
+      const { totalsByCat, totalMs, bucketTotals, byCatPct, byBucketPct } = computeTotals(true);
+
+      // Live per-card time
+      for(const c of CATEGORIES){
+        const node = el(`time_${c.id}`);
+        if(node) node.textContent = fmtHMS(totalsByCat[c.id] || 0);
+      }
+
+      // Live sidebar
+      totalTime.textContent = fmtHMS(totalMs);
+      bucketProductive.textContent = fmtHMS(bucketTotals["Productive Time"]);
+      bucketSupport.textContent = fmtHMS(bucketTotals["Instructional Support Time"]);
+      bucketLost.textContent = fmtHMS(bucketTotals["Lost Time"]);
+
+      bucketProductivePct.textContent = `${byBucketPct["Productive Time"].toFixed(1)}%`;
+      bucketSupportPct.textContent = `${byBucketPct["Instructional Support Time"].toFixed(1)}%`;
+      bucketLostPct.textContent = `${byBucketPct["Lost Time"].toFixed(1)}%`;
+      centeredness.textContent = `${byBucketPct["Productive Time"].toFixed(1)}%`;
+
+      // Live bar updates
+      for(const c of CATEGORIES){
+        const fill = el(`barFill_${c.id}`);
+        const val = el(`barVal_${c.id}`);
+        if(!fill || !val) continue;
+        const pct = (byCatPct[c.id] || 0);
+        fill.style.width = `${pct.toFixed(1)}%`;
+        val.textContent = `${fmtHMS(totalsByCat[c.id] || 0)} · ${pct.toFixed(1)}%`;
+      }
+    }
+
+    function renderAll(){
+      const { totalsByCat, totalMs, bucketTotals, byCatPct, byBucketPct } = computeTotals(false);
+
+      // Card totals (recorded only)
+      for(const c of CATEGORIES){
+        const node = el(`time_${c.id}`);
+        if(node) node.textContent = fmtHMS(totalsByCat[c.id] || 0);
+      }
+
+      totalTime.textContent = fmtHMS(totalMs);
+      segCount.textContent = String(state.segments.length);
+
+      bucketProductive.textContent = fmtHMS(bucketTotals["Productive Time"]);
+      bucketSupport.textContent = fmtHMS(bucketTotals["Instructional Support Time"]);
+      bucketLost.textContent = fmtHMS(bucketTotals["Lost Time"]);
+
+      bucketProductivePct.textContent = `${byBucketPct["Productive Time"].toFixed(1)}%`;
+      bucketSupportPct.textContent = `${byBucketPct["Instructional Support Time"].toFixed(1)}%`;
+      bucketLostPct.textContent = `${byBucketPct["Lost Time"].toFixed(1)}%`;
+      centeredness.textContent = `${byBucketPct["Productive Time"].toFixed(1)}%`;
+
+      // Bars (recorded only)
+      for(const c of CATEGORIES){
+        const fill = el(`barFill_${c.id}`);
+        const val = el(`barVal_${c.id}`);
+        if(!fill || !val) continue;
+        const pct = (byCatPct[c.id] || 0);
+        fill.style.width = `${pct.toFixed(1)}%`;
+        val.textContent = `${fmtHMS(totalsByCat[c.id] || 0)} · ${pct.toFixed(1)}%`;
+      }
+
+      renderLog();
+    }
+
+    function renderLog(){
+      logList.innerHTML = "";
+      if(!state.segments.length){
+        const empty = document.createElement("div");
+        empty.className = "logItem";
+        empty.innerHTML = `<div>
+          <div class="a">No segments yet</div>
+          <div class="b">Start a category timer to record segments.</div>
+        </div><div class="rightTiny mono">—</div>`;
+        logList.appendChild(empty);
+        return;
+      }
+
+      const rev = [...state.segments].reverse();
+      for(const seg of rev){
+        const item = document.createElement("div");
+        item.className = "logItem";
+
+        const start = new Date(seg.startISO);
+        const end = new Date(seg.endISO);
+        const when = `${fmtClock(start)} → ${fmtClock(end)}`;
+
+        const left = document.createElement("div");
+        left.innerHTML = `
+          <div class="a">${escapeHtml(seg.categoryName)} <span style="color:#6b7280">· ${escapeHtml(seg.bucket)}</span></div>
+          <div class="b">
+            <span class="mono">${when}</span>
+            <span> · ${fmtHMS(seg.durationMs)}</span>
+            ${seg.note ? `<br/><b>Note:</b> ${escapeHtml(seg.note)}` : ""}
+          </div>
+        `;
+
+        const right = document.createElement("div");
+        right.className = "rightTiny mono";
+        right.textContent = seg.mode === "video" ? videoStamp(seg) : "Live";
+
+        item.appendChild(left);
+        item.appendChild(right);
+        logList.appendChild(item);
+      }
+    }
+
+    function videoStamp(seg){
+      const v = seg.video;
+      if(!v) return "Video";
+      if(v.type === "upload" && isFinite(v.currentTimeSec)) return `Upload @ ${fmtMMSS(v.currentTimeSec)}`;
+      if(v.type === "youtube" && isFinite(v.currentTimeSec)) return `YT @ ${fmtMMSS(v.currentTimeSec)}`;
+      return (v.type || "Video").toUpperCase();
+    }
+
+    /***********************
+     * Export JSON
+     ***********************/
+    exportJsonBtn.addEventListener("click", () => {
+      if(state.segmentStartMs){
+        showToast("Stop the current segment before exporting.");
+        return;
+      }
+      const obj = buildExportObject();
+      const json = JSON.stringify(obj, null, 2);
+      downloadBlob(json, `rehearsal-flow-efficiency_${timestampSafe()}.json`, "application/json");
+      showToast("Exported JSON.");
+    });
+
+    function buildExportObject(){
+      const { totalsByCat, totalMs, bucketTotals, byCatPct, byBucketPct } = computeTotals(false);
+      return {
+        app: "Rehearsal Flow Efficiency Tracker",
+        developer: "Kevin Droe, Ph.D.",
+        schemaVersion: "1.3",
+        metadata: {
+          observerName: (observerName.value || "").trim() || null,
+          date: obsDate.value || null,
+          teacherName: (teacherName.value || "").trim() || null,
+          contextClass: (contextClass.value || "").trim() || null
+        },
+        session: {
+          sessionId: state.sessionId,
+          startedAtISO: state.startedAtISO,
+          exportedAtISO: new Date().toISOString()
+        },
+        bucketMapping: {
+          "Productive Time": ["Active music making"],
+          "Instructional Support Time": ["Instruction (talking)", "Teacher modeling", "Student discussion/reflection"],
+          "Lost Time": ["Transition/setup", "Behavior management", "Waiting / downtime"]
+        },
+        totals: {
+          totalMs,
+          totalHMS: fmtHMS(totalMs),
+          byCategoryMs: totalsByCat,
+          byCategoryPct: byCatPct,
+          byBucketMs: bucketTotals,
+          byBucketPct: byBucketPct
+        },
+        segments: state.segments
+      };
+    }
+
+    /***********************
+     * Export Text + Copy + CSV
+     ***********************/
+    generateTextBtn.addEventListener("click", () => {
+      if(state.segmentStartMs){
+        showToast("Stop the current segment before generating export text.");
+        return;
+      }
+      exportText.value = buildExportText();
+      showToast("Export text generated.");
+    });
+
+    copyTextBtn.addEventListener("click", async () => {
+      const txt = exportText.value || "";
+      if(!txt.trim()){
+        showToast("Nothing to copy. Generate export text first.");
+        return;
+      }
+      try{
+        await navigator.clipboard.writeText(txt);
+        showToast("Copied to clipboard.");
+      }catch(e){
+        exportText.focus(); exportText.select();
+        document.execCommand("copy");
+        showToast("Copied (fallback).");
+      }
+    });
+
+    exportCsvBtn.addEventListener("click", () => {
+      if(state.segmentStartMs){
+        showToast("Stop the current segment before exporting CSV.");
+        return;
+      }
+      const csv = buildExportCSV();
+      downloadBlob(csv, `rehearsal-flow-efficiency_${timestampSafe()}.csv`, "text/csv");
+      showToast("Exported CSV.");
+    });
+
+    function buildExportText(){
+      const meta = {
+        observer: (observerName.value || "").trim(),
+        date: obsDate.value || "",
+        teacher: (teacherName.value || "").trim(),
+        context: (contextClass.value || "").trim()
+      };
+
+      const { totalsByCat, totalMs, bucketTotals, byCatPct, byBucketPct } = computeTotals(false);
+
+      const lines = [];
+      lines.push("Rehearsal Flow Efficiency Tracker");
+      lines.push("Developed by Kevin Droe, Ph.D.");
+      lines.push("");
+      lines.push(`Observer: ${meta.observer || "-"}`);
+      lines.push(`Date: ${meta.date || "-"}`);
+      lines.push(`Teacher: ${meta.teacher || "-"}`);
+      lines.push(`Context/Class: ${meta.context || "-"}`);
+      lines.push("");
+      lines.push(`Total Observed Time: ${fmtHMS(totalMs)} (100.0%)`);
+      lines.push("");
+      lines.push("Bucket Analysis");
+      for(const b of BUCKETS){
+        lines.push(`- ${b}: ${fmtHMS(bucketTotals[b])} (${byBucketPct[b].toFixed(1)}%)`);
+      }
+      lines.push("");
+      lines.push("Category Breakdown");
+      for(const c of CATEGORIES){
+        const ms = totalsByCat[c.id] || 0;
+        lines.push(`- ${c.name}: ${fmtHMS(ms)} (${(byCatPct[c.id]||0).toFixed(1)}%)  [${c.bucket}]`);
+      }
+      return lines.join("\n");
+    }
+
+    function buildExportCSV(){
+      const metaObserver = csvEscape((observerName.value||"").trim());
+      const metaDate = csvEscape(obsDate.value||"");
+      const metaTeacher = csvEscape((teacherName.value||"").trim());
+      const metaContext = csvEscape((contextClass.value||"").trim());
+
+      const { totalsByCat, totalMs, bucketTotals, byCatPct, byBucketPct } = computeTotals(false);
+
+      const rows = [];
+      rows.push(["SECTION","KEY","VALUE"].join(","));
+      rows.push(["METADATA","Observer",metaObserver].join(","));
+      rows.push(["METADATA","Date",metaDate].join(","));
+      rows.push(["METADATA","Teacher",metaTeacher].join(","));
+      rows.push(["METADATA","Context/Class",metaContext].join(","));
+      rows.push(["METADATA","Total Observed Time",csvEscape(fmtHMS(totalMs))].join(","));
+      rows.push(["METADATA","Total Percent","100.0%"].join(","));
+
+      rows.push("");
+      rows.push(["SECTION","BUCKET","TIME_HMS","PCT"].join(","));
+      for(const b of BUCKETS){
+        rows.push([
+          "BUCKET_SUMMARY",
+          csvEscape(b),
+          csvEscape(fmtHMS(bucketTotals[b])),
+          csvEscape(byBucketPct[b].toFixed(1) + "%")
+        ].join(","));
+      }
+
+      rows.push("");
+      rows.push(["SECTION","CATEGORY","BUCKET","TIME_HMS","PCT"].join(","));
+      for(const c of CATEGORIES){
+        rows.push([
+          "CATEGORY_SUMMARY",
+          csvEscape(c.name),
+          csvEscape(c.bucket),
+          csvEscape(fmtHMS(totalsByCat[c.id] || 0)),
+          csvEscape((byCatPct[c.id]||0).toFixed(1) + "%")
+        ].join(","));
+      }
+
+      rows.push("");
+      rows.push(["SECTION","SEGMENT_ID","CATEGORY","BUCKET","START_ISO","END_ISO","DURATION_MS","DURATION_HMS","NOTE","MODE","VIDEO_TYPE","VIDEO_TIME_SEC"].join(","));
+      for(const s of state.segments){
+        rows.push([
+          "SEGMENTS",
+          csvEscape(s.id),
+          csvEscape(s.categoryName),
+          csvEscape(s.bucket),
+          csvEscape(s.startISO),
+          csvEscape(s.endISO),
+          String(s.durationMs),
+          csvEscape(fmtHMS(s.durationMs)),
+          csvEscape(s.note || ""),
+          csvEscape(s.mode || ""),
+          csvEscape(s.video?.type || ""),
+          csvEscape((s.video?.currentTimeSec ?? "") + "")
+        ].join(","));
+      }
+      return rows.join("\n");
+    }
+
+    /***********************
+     * Card UI
+     ***********************/
+    function setActiveCardUI(catId){
+      for(const c of CATEGORIES){
+        const card = el(`card_${c.id}`);
+        const btn = el(`btn_${c.id}`);
+        if(!card || !btn) continue;
+        const isActive = (c.id === catId);
+        card.classList.toggle("active", isActive);
+        btn.textContent = isActive ? "Stop" : "Start";
+        btn.classList.toggle("danger", isActive);
+        btn.classList.toggle("primary", !isActive);
+      }
+    }
+    function clearActiveCardUI(){
+      for(const c of CATEGORIES){
+        const card = el(`card_${c.id}`);
+        const btn = el(`btn_${c.id}`);
+        if(card) card.classList.remove("active");
+        if(btn){
+          btn.textContent = "Start";
+          btn.classList.remove("danger");
+          btn.classList.add("primary");
+        }
+      }
+    }
+
+    /***********************
+     * Utilities
+     ***********************/
+    function fmtHMS(ms){
+      const s = Math.floor(ms/1000);
+      const hh = Math.floor(s/3600);
+      const mm = Math.floor((s%3600)/60);
+      const ss = s%60;
+      return `${pad2(hh)}:${pad2(mm)}:${pad2(ss)}`;
+    }
+    function fmtClock(d){ return `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`; }
+    function fmtMMSS(sec){
+      const s = Math.floor(sec);
+      const mm = Math.floor(s/60);
+      const ss = s%60;
+      return `${pad2(mm)}:${pad2(ss)}`;
+    }
+    function pad2(n){ return String(n).padStart(2,"0"); }
+    function safeNumber(x){
+      const n = Number(x);
+      return Number.isFinite(n) ? n : null;
+    }
+    function cryptoRandomId(){
+      const a = new Uint8Array(8);
+      crypto.getRandomValues(a);
+      return Array.from(a).map(b => b.toString(16).padStart(2,"0")).join("");
+    }
+    function showToast(msg){
+      toast.textContent = msg;
+      toast.style.display = "block";
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(() => { toast.style.display = "none"; }, 2200);
+    }
+    function escapeHtml(str){
+      return String(str ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+    function parseYouTubeId(url){
+      if(!url) return null;
+      try{
+        const u = new URL(url);
+        const host = u.hostname.replace("www.","");
+        if(host === "youtu.be"){
+          const id = u.pathname.split("/").filter(Boolean)[0];
+          return id || null;
+        }
+        if(host.includes("youtube.com")){
+          if(u.searchParams.get("v")) return u.searchParams.get("v");
+          const parts = u.pathname.split("/").filter(Boolean);
+          const idx = parts.findIndex(p => p === "shorts" || p === "embed");
+          if(idx >= 0 && parts[idx+1]) return parts[idx+1];
+        }
+      }catch(e){
+        const m = url.match(/(?:v=|\/shorts\/|youtu\.be\/|\/embed\/)([A-Za-z0-9_-]{6,})/);
+        return m ? m[1] : null;
+      }
+      return null;
+    }
+    function timestampSafe(){
+      return new Date().toISOString().replaceAll(":","-");
+    }
+    function downloadBlob(content, filename, mime){
+      const blob = new Blob([content], {type:mime});
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+    function csvEscape(value){
+      const s = String(value ?? "");
+      if(/[",\n]/.test(s)){
+        return `"${s.replaceAll('"','""')}"`;
+      }
+      return s;
+    }
+    function formatBytes(bytes){
+      if(!Number.isFinite(bytes)) return "";
+      const units = ["B","KB","MB","GB"];
+      let i = 0, n = bytes;
+      while(n >= 1024 && i < units.length-1){ n /= 1024; i++; }
+      return `${n.toFixed(i===0?0:1)} ${units[i]}`;
+    }
+
+    /***********************
+     * Initial render
+     ***********************/
+    renderAll();
+  </script>
+</body>
+</html>
